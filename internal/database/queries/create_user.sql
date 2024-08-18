@@ -1,0 +1,1 @@
+INSERT INTO users (first_name, username, phone) VALUES ($1, $2, $3)
