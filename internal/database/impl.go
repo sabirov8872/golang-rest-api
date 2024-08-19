@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+
 	"github.com/sabirov8872/golang-rest-api/internal/types"
 )
 
@@ -12,8 +13,8 @@ type Repository struct {
 type IRepository interface {
 	GetAllUsers() (resp []*types.UserDB, err error)
 	GetUserById(id string) (resp *types.UserDB, err error)
-	CreateUser(firstName, username, phone string) (err error)
-	UpdateUser(id, newFirstName, newUsername, newPhone string) (err error)
+	CreateUser(req types.CreateUser) (err error)
+	UpdateUser(id string, req types.UpdateUser) (err error)
 	DeleteUser(id string) (err error)
 }
 
@@ -54,13 +55,13 @@ func (repo *Repository) GetUserById(id string) (resp *types.UserDB, err error) {
 	return resp, nil
 }
 
-func (repo *Repository) CreateUser(firstName, username, phone string) (err error) {
-	_, err = repo.DB.Exec(createUserQuery, firstName, username, phone)
+func (repo *Repository) CreateUser(req types.CreateUser) (err error) {
+	_, err = repo.DB.Exec(createUserQuery, req.FirstName, req.Username, req.Phone)
 	return err
 }
 
-func (repo *Repository) UpdateUser(id, newFirstName, newUsername, newPhone string) (err error) {
-	_, err = repo.DB.Exec(updateUserQuery, newFirstName, newUsername, newPhone, id)
+func (repo *Repository) UpdateUser(id string, req types.UpdateUser) (err error) {
+	_, err = repo.DB.Exec(updateUserQuery, req.FirstName, req.Username, req.Phone, id)
 	return err
 }
 

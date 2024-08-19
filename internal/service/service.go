@@ -12,8 +12,8 @@ type Service struct {
 type IService interface {
 	GetAllUsers() ([]*types.User, error)
 	GetUserById(id string) (*types.User, error)
-	CreateUser(firstName, username, phone string) error
-	UpdateUser(id, firstName, username, phone string) error
+	CreateUser(req types.CreateUser) error
+	UpdateUser(id string, req types.UpdateUser) error
 	DeleteUser(id string) error
 }
 
@@ -56,13 +56,13 @@ func (s *Service) GetUserById(id string) (*types.User, error) {
 	return resp, nil
 }
 
-func (s *Service) CreateUser(firstName, username, phone string) error {
-	err := s.repo.CreateUser(firstName, username, phone)
+func (s *Service) CreateUser(req types.CreateUser) error {
+	err := s.repo.CreateUser(req)
 	return err
 }
 
-func (s *Service) UpdateUser(id, newFirstName, newUsername, newPhone string) error {
-	err := s.repo.UpdateUser(id, newFirstName, newUsername, newPhone)
+func (s *Service) UpdateUser(id string, req types.UpdateUser) error {
+	err := s.repo.UpdateUser(id, req)
 	return err
 }
 

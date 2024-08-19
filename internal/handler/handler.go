@@ -3,9 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/sabirov8872/golang-rest-api/internal/service"
-	"net/http"
+	"github.com/sabirov8872/golang-rest-api/internal/types"
 )
 
 type Handler struct {
@@ -66,12 +68,10 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	firstName := vars["first_name"]
-	username := vars["username"]
-	phone := vars["phone"]
+	var req types.CreateUser
+	json.NewDecoder(r.Body).Decode(&req)
 
-	err := h.service.CreateUser(firstName, username, phone)
+	err := h.service.CreateUser(req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -83,17 +83,18 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	newFirstName := vars["first_name"]
-	newUsername := vars["username"]
-	newPhone := vars["phone"]
 
-	err := h.service.UpdateUser(id, newFirstName, newUsername, newPhone)
+	var req types.UpdateUser
+	json.NewDecoder(r.Body).Decode(&req)
+
+	err := h.service.UpdateUser(id, req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, "User updated")
+
 }
 
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {

@@ -6,8 +6,13 @@ import (
 )
 
 type Config struct {
-	ServerAddress string
-	DatabasePath  string
+	ServerPort string
+	DBHost     string
+	DBPort     string
+	DBUser     string
+	DBPassword string
+	DBName     string
+	DBSSLMode  string
 }
 
 func NewConfig() (*Config, error) {
@@ -17,8 +22,13 @@ func NewConfig() (*Config, error) {
 	}
 
 	config := Config{
-		ServerAddress: os.Getenv("SERVER_ADDRESS"),
-		DatabasePath:  os.Getenv("DATABASE_PATH"),
+		ServerPort: os.Getenv("SERVER_PORT"),
+		DBHost:     os.Getenv("DB_HOST"),
+		DBPort:     os.Getenv("DB_PORT"),
+		DBUser:     os.Getenv("DB_USER"),
+		DBPassword: os.Getenv("DB_PASSWORD"),
+		DBName:     os.Getenv("DB_NAME"),
+		DBSSLMode:  os.Getenv("DB_SSL_MODE"),
 	}
 
 	return &config, nil
