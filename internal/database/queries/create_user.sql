@@ -1,1 +1,1 @@
-INSERT INTO users (first_name, username, phone) VALUES ($1, $2, $3)
+INSERT INTO users (first_name, username, phone) VALUES ($1, $2, $3) RETURNING *

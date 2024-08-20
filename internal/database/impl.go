@@ -12,10 +12,10 @@ type Repository struct {
 
 type IRepository interface {
 	GetAllUsers() (resp []*types.UserDB, err error)
-	GetUserById(id string) (resp *types.UserDB, err error)
-	CreateUser(req types.CreateUser) (err error)
-	UpdateUser(id string, req types.UpdateUser) (err error)
-	DeleteUser(id string) (err error)
+	GetUserById(id string) (*types.UserDB, error)
+	CreateUser(req types.CreateUser) (*types.UserDB, error)
+	UpdateUser(id string, req types.UpdateUser) (*types.UserDB, error)
+	DeleteUser(id string) (*types.UserDB, error)
 }
 
 func NewRepository(db *sql.DB) *Repository {
@@ -44,28 +44,42 @@ func (repo *Repository) GetAllUsers() (resp []*types.UserDB, err error) {
 	return resp, nil
 }
 
-func (repo *Repository) GetUserById(id string) (resp *types.UserDB, err error) {
+func (repo *Repository) GetUserById(id string) (*types.UserDB, error) {
 	var user types.UserDB
-	err = repo.DB.QueryRow(getUserByIdQuery, id).Scan(&user.ID, &user.FirstName, &user.Username, &user.Phone)
+	err := repo.DB.QueryRow(getUserByIdQuery, id).Scan(&user.ID, &user.FirstName, &user.Username, &user.Phone)
 	if err != nil {
 		return nil, err
 	}
-	resp = &user
 
-	return resp, nil
+	return &user, nil
 }
 
-func (repo *Repository) CreateUser(req types.CreateUser) (err error) {
-	_, err = repo.DB.Exec(createUserQuery, req.FirstName, req.Username, req.Phone)
-	return err
+func (repo *Repository) CreateUser(req types.CreateUser) (*types.UserDB, error) {
+	var user types.UserDB
+	err := repo.DB.QueryRow(createUserQuery, req.FirstName, req.Username, req.Phone).Scan(&user.ID, &user.FirstName, &user.Username, &user.Phone)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
 
-func (repo *Repository) UpdateUser(id string, req types.UpdateUser) (err error) {
-	_, err = repo.DB.Exec(updateUserQuery, req.FirstName, req.Username, req.Phone, id)
-	return err
+func (repo *Repository) UpdateUser(id string, req types.UpdateUser) (*types.UserDB, error) {
+	var user types.UserDB
+	err := repo.DB.QueryRow(updateUserQuery, req.FirstName, req.Username, req.Phone, id).Scan(&user.ID, &user.FirstName, &user.Username, &user.Phone)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
 
-func (repo *Repository) DeleteUser(id string) (err error) {
-	_, err = repo.DB.Exec(deleteUserQuery, id)
-	return err
+func (repo *Repository) DeleteUser(id string) (*types.UserDB, error) {
+	var user types.UserDB
+	err := repo.DB.QueryRow(deleteUserQuery, id).Scan(&user.ID, &user.FirstName, &user.Username, &user.Phone)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }

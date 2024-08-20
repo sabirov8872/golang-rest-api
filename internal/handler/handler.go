@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -32,17 +31,7 @@ func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	out, err := json.Marshal(res)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(out)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	jsonResponse(w, res)
 }
 
 func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
@@ -54,30 +43,19 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	out, err := json.Marshal(res)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(out)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	jsonResponse(w, res)
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req types.CreateUser
 	json.NewDecoder(r.Body).Decode(&req)
 
-	err := h.service.CreateUser(req)
+	res, err := h.service.CreateUser(req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, "User created")
+	jsonResponse(w, res)
 }
 
 func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
@@ -87,25 +65,35 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	var req types.UpdateUser
 	json.NewDecoder(r.Body).Decode(&req)
 
-	err := h.service.UpdateUser(id, req)
+	res, err := h.service.UpdateUser(id, req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	} else {
+		jsonResponse(w, res)
 	}
-
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, "User updated")
-
 }
 
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	err := h.service.DeleteUser(id)
+	res, err := h.service.DeleteUser(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
+	jsonResponse(w, res)
+}
+
+func jsonResponse(w http.ResponseWriter, data interface{}) {
+	out, err := json.Marshal(data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, "User deleted")
+	_, err = w.Write(out)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
