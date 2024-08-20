@@ -1,1 +1,1 @@
-UPDATE users SET first_name=$1, username=$2, phone=$3 WHERE id=$4 RETURNING *
+UPDATE users SET firstname = $1, username = $2, phone = $3 WHERE id = $4

@@ -1,1 +1,6 @@
-SELECT * FROM users
+SELECT
+    id,
+    firstname,
+    username,
+    phone
+    FROM users

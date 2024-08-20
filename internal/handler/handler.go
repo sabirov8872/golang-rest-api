@@ -47,7 +47,7 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	var req types.CreateUser
+	var req types.CreateUserRequest
 	json.NewDecoder(r.Body).Decode(&req)
 
 	res, err := h.service.CreateUser(req)
@@ -62,27 +62,23 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	var req types.UpdateUser
+	var req types.UpdateUserRequest
 	json.NewDecoder(r.Body).Decode(&req)
 
-	res, err := h.service.UpdateUser(id, req)
+	err := h.service.UpdateUser(id, req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-
-	jsonResponse(w, res)
 }
 
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	res, err := h.service.DeleteUser(id)
+	err := h.service.DeleteUser(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-
-	jsonResponse(w, res)
 }
 
 func jsonResponse(w http.ResponseWriter, data interface{}) {

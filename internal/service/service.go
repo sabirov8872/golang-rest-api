@@ -10,18 +10,18 @@ type Service struct {
 }
 
 type IService interface {
-	GetAllUsers() ([]*types.User, error)
+	GetAllUsers() (*types.ListUserResponse, error)
 	GetUserById(id string) (*types.User, error)
-	CreateUser(req types.CreateUser) (*types.User, error)
-	UpdateUser(id string, req types.UpdateUser) (*types.User, error)
-	DeleteUser(id string) (*types.User, error)
+	CreateUser(req types.CreateUserRequest) (*types.CreateUserResponse, error)
+	UpdateUser(id string, req types.UpdateUserRequest) error
+	DeleteUser(id string) error
 }
 
 func NewService(repo database.IRepository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) GetAllUsers() ([]*types.User, error) {
+func (s *Service) GetAllUsers() (*types.ListUserResponse, error) {
 	res, err := s.repo.GetAllUsers()
 	if err != nil {
 		return nil, err
@@ -37,11 +37,13 @@ func (s *Service) GetAllUsers() ([]*types.User, error) {
 		}
 	}
 
-	return resp, nil
+	return &types.ListUserResponse{
+		Items: resp,
+	}, nil
 }
 
 func (s *Service) GetUserById(id string) (*types.User, error) {
-	res, err := s.repo.GetUserById(id)
+	res, err := s.repo.GetUserByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -56,50 +58,21 @@ func (s *Service) GetUserById(id string) (*types.User, error) {
 	return resp, nil
 }
 
-func (s *Service) CreateUser(req types.CreateUser) (*types.User, error) {
-	res, err := s.repo.CreateUser(req)
+func (s *Service) CreateUser(req types.CreateUserRequest) (*types.CreateUserResponse, error) {
+	id, err := s.repo.CreateUser(req)
 	if err != nil {
 		return nil, err
 	}
 
-	resp := &types.User{
-		ID:        res.ID,
-		FirstName: res.FirstName,
-		Username:  res.Username,
-		Phone:     res.Phone,
-	}
-
-	return resp, nil
+	return &types.CreateUserResponse{
+		ID: id,
+	}, nil
 }
 
-func (s *Service) UpdateUser(id string, req types.UpdateUser) (*types.User, error) {
-	res, err := s.repo.UpdateUser(id, req)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &types.User{
-		ID:        res.ID,
-		FirstName: res.FirstName,
-		Username:  res.Username,
-		Phone:     res.Phone,
-	}
-
-	return resp, nil
+func (s *Service) UpdateUser(id string, req types.UpdateUserRequest) error {
+	return s.repo.UpdateUser(id, req)
 }
 
-func (s *Service) DeleteUser(id string) (*types.User, error) {
-	res, err := s.repo.DeleteUser(id)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &types.User{
-		ID:        res.ID,
-		FirstName: res.FirstName,
-		Username:  res.Username,
-		Phone:     res.Phone,
-	}
-
-	return resp, nil
+func (s *Service) DeleteUser(id string) error {
+	return s.repo.DeleteUser(id)
 }
