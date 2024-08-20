@@ -68,9 +68,9 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	res, err := h.service.UpdateUser(id, req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	} else {
-		jsonResponse(w, res)
 	}
+
+	jsonResponse(w, res)
 }
 
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
@@ -90,6 +90,7 @@ func jsonResponse(w http.ResponseWriter, data interface{}) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(out)
