@@ -28,7 +28,7 @@ func NewHandler(service service.IService) *Handler {
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	res, err := h.service.GetAllUsers()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		statusInternalServerError(w, err)
 	}
 
 	jsonResponse(w, res)
@@ -40,7 +40,7 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.service.GetUserById(id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		statusInternalServerError(w, err)
 	}
 
 	jsonResponse(w, res)
@@ -52,7 +52,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.service.CreateUser(req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		statusInternalServerError(w, err)
 	}
 
 	jsonResponse(w, res)
@@ -67,7 +67,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	err := h.service.UpdateUser(id, req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		statusInternalServerError(w, err)
 	}
 }
 
@@ -77,20 +77,24 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	err := h.service.DeleteUser(id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		statusInternalServerError(w, err)
 	}
 }
 
 func jsonResponse(w http.ResponseWriter, data interface{}) {
 	out, err := json.Marshal(data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		statusInternalServerError(w, err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(out)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		statusInternalServerError(w, err)
 	}
+}
+
+func statusInternalServerError(w http.ResponseWriter, err error) {
+	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
