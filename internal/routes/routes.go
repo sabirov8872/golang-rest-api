@@ -10,6 +10,7 @@ import (
 
 func Run(handler handler.IHandler, port string) {
 	router := mux.NewRouter()
+	router.HandleFunc("/token", handler.GetToken).Methods("POST")
 	router.HandleFunc("/user", handler.GetAllUsers).Methods("GET")
 	router.HandleFunc("/user/{id}", handler.GetUserById).Methods("GET")
 	router.HandleFunc("/user", handler.CreateUser).Methods("POST")

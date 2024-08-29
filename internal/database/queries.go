@@ -18,4 +18,7 @@ var (
 
 	//go:embed queries/delete_user.sql
 	deleteUserQuery string
+
+	//go:embed queries/get_token.sql
+	getTokenQuery string
 )

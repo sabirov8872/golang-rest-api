@@ -14,6 +14,7 @@ type Handler struct {
 }
 
 type IHandler interface {
+	GetToken(w http.ResponseWriter, r *http.Request)
 	GetAllUsers(w http.ResponseWriter, r *http.Request)
 	GetUserById(w http.ResponseWriter, r *http.Request)
 	CreateUser(w http.ResponseWriter, r *http.Request)
@@ -25,7 +26,38 @@ func NewHandler(service service.IService) *Handler {
 	return &Handler{service: service}
 }
 
+func (h *Handler) GetToken(w http.ResponseWriter, r *http.Request) {
+	var req types.GetTokenResponse
+	json.NewDecoder(r.Body).Decode(&req)
+	defer r.Body.Close()
+
+	id, err := h.service.GetToken(req)
+	if err != nil {
+		newErrorResponse(w, err.Error(), http.StatusNoContent)
+	}
+
+	token, err := createToken(req.Username)
+	if err != nil {
+		newErrorResponse(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	jsonResponse(w, types.TokenResponse{UserID: id, Token: token})
+
+}
+
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		newErrorResponse(w, "Missing authorization header", http.StatusUnauthorized)
+		return
+	}
+	tokenString = tokenString[len("Bearer "):]
+
+	err := verifyToken(tokenString)
+	if err != nil {
+		newErrorResponse(w, "Invalid token", http.StatusUnauthorized)
+	}
+
 	res, err := h.service.GetAllUsers()
 	if err != nil {
 		newErrorResponse(w, err.Error(), http.StatusInternalServerError)
