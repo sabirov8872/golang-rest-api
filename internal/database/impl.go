@@ -11,7 +11,7 @@ type Repository struct {
 }
 
 type IRepository interface {
-	GetToken(types.GetTokenResponse) (int, error)
+	GetToken(string) (int64, error)
 	GetAllUsers() (resp []*types.UserDB, err error)
 	GetUserByID(id string) (*types.UserDB, error)
 	CreateUser(req types.CreateUserRequest) (int64, error)
@@ -25,8 +25,8 @@ func NewRepository(db *sql.DB) *Repository {
 	}
 }
 
-func (repo *Repository) GetToken(username types.GetTokenResponse) (int, error) {
-	var id int
+func (repo *Repository) GetToken(username string) (int64, error) {
+	var id int64
 	err := repo.DB.QueryRow(getTokenQuery, username).Scan(&id)
 	if err != nil {
 		return 0, err

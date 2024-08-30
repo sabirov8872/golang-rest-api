@@ -3,30 +3,40 @@ package handler
 import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
+	"net/http"
 	"os"
 	"time"
 )
 
-var secretKey string = os.Getenv("SECRET_KEY")
-
-func createToken(username string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
-		jwt.MapClaims{
-			"username": username,
-			"exp":      time.Now().Add(time.Minute * 15).Unix(),
-		})
-
-	tokenString, err := token.SignedString(secretKey)
+func checkAuth(r *http.Request) bool {
+	authHeader := r.Header.Get("Authorization")
+	err := verifyToken(authHeader)
 	if err != nil {
-		return "", err
+		return false
 	}
 
-	return tokenString, nil
+	return true
+}
+
+func createToken(username string) (string, error) {
+	claims := &jwt.MapClaims{
+		"username": username,
+		"exp":      time.Now().Add(time.Minute * 15).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	secret := os.Getenv("SECRET_KEY")
+	return token.SignedString([]byte(secret))
 }
 
 func verifyToken(tokenString string) error {
+	secret := os.Getenv("SECRET_KEY")
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return secretKey, nil
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte(secret), nil
 	})
 
 	if err != nil {

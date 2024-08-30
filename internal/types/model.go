@@ -27,11 +27,11 @@ type UpdateUserRequest struct {
 	Phone     string `json:"phone"`
 }
 
-type GetTokenResponse struct {
-	Username string `json:"username"`
+type TokenResponse struct {
+	UserID int64  `json:"userId"`
+	Token  string `json:"token"`
 }
 
-type TokenResponse struct {
-	UserID int    `json:"userId"`
-	Token  string `json:"token"`
+type GetTokenResponse struct {
+	Username string `json:"username"`
 }
