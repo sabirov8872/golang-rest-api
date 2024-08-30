@@ -27,7 +27,7 @@ func NewHandler(service service.IService) *Handler {
 }
 
 func (h *Handler) GetToken(w http.ResponseWriter, r *http.Request) {
-	var req types.GetTokenResponse
+	var req types.GetToken
 	json.NewDecoder(r.Body).Decode(&req)
 
 	id, err := h.service.GetToken(req.Username)

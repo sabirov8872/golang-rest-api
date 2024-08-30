@@ -32,6 +32,6 @@ type TokenResponse struct {
 	Token  string `json:"token"`
 }
 
-type GetTokenResponse struct {
+type GetToken struct {
 	Username string `json:"username"`
 }
