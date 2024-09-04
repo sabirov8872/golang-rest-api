@@ -14,7 +14,7 @@ type Handler struct {
 }
 
 type IHandler interface {
-	GetToken(w http.ResponseWriter, r *http.Request)
+	CheckUser(w http.ResponseWriter, r *http.Request)
 	GetAllUsers(w http.ResponseWriter, r *http.Request)
 	GetUserById(w http.ResponseWriter, r *http.Request)
 	CreateUser(w http.ResponseWriter, r *http.Request)
@@ -26,11 +26,11 @@ func NewHandler(service service.IService) *Handler {
 	return &Handler{service: service}
 }
 
-func (h *Handler) GetToken(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CheckUser(w http.ResponseWriter, r *http.Request) {
 	var req types.GetToken
 	json.NewDecoder(r.Body).Decode(&req)
 
-	id, err := h.service.GetToken(req.Username)
+	id, err := h.service.CheckUser(req.Username)
 	if err != nil {
 		errorResponse(w, err.Error(), http.StatusNoContent)
 	}
@@ -40,7 +40,9 @@ func (h *Handler) GetToken(w http.ResponseWriter, r *http.Request) {
 		errorResponse(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	writeJSON(w, types.TokenResponse{UserID: id, Token: token})
+	w.Header().Add("Authorization", "Bearer "+token)
+
+	writeJSON(w, types.CheckUserResponse{UserID: id})
 }
 
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +60,11 @@ func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
+	if !checkAuth(r) {
+		errorResponse(w, "invalid token", http.StatusUnauthorized)
+		return
+	}
+
 	vars := mux.Vars(r)
 	id := vars["id"]
 
@@ -70,6 +77,11 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
+	if !checkAuth(r) {
+		errorResponse(w, "invalid token", http.StatusUnauthorized)
+		return
+	}
+
 	var req types.CreateUserRequest
 	json.NewDecoder(r.Body).Decode(&req)
 
@@ -82,6 +94,11 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	if !checkAuth(r) {
+		errorResponse(w, "invalid token", http.StatusUnauthorized)
+		return
+	}
+
 	vars := mux.Vars(r)
 	id := vars["id"]
 
@@ -95,6 +112,11 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	if !checkAuth(r) {
+		errorResponse(w, "invalid token", http.StatusUnauthorized)
+		return
+	}
+
 	vars := mux.Vars(r)
 	id := vars["id"]
 

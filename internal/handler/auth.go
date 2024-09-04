@@ -2,15 +2,17 @@ package handler
 
 import (
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func checkAuth(r *http.Request) bool {
 	authHeader := r.Header.Get("Authorization")
-	err := verifyToken(authHeader)
+	authHeader = authHeader[len("Bearer "):]
+	err := checkToken(authHeader)
 	if err != nil {
 		return false
 	}
@@ -29,7 +31,7 @@ func createToken(username string) (string, error) {
 	return token.SignedString([]byte(secret))
 }
 
-func verifyToken(tokenString string) error {
+func checkToken(tokenString string) error {
 	secret := os.Getenv("SECRET_KEY")
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

@@ -10,7 +10,7 @@ type Service struct {
 }
 
 type IService interface {
-	GetToken(resp string) (int64, error)
+	CheckUser(resp string) (int64, error)
 	GetAllUsers() (*types.ListUserResponse, error)
 	GetUserById(id string) (*types.User, error)
 	CreateUser(req types.CreateUserRequest) (*types.CreateUserResponse, error)
@@ -22,8 +22,8 @@ func NewService(repo database.IRepository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) GetToken(username string) (int64, error) {
-	id, err := s.repo.GetToken(username)
+func (s *Service) CheckUser(username string) (int64, error) {
+	id, err := s.repo.CheckUser(username)
 	if err != nil {
 		return 0, err
 	}
