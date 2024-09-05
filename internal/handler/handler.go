@@ -32,36 +32,38 @@ func (h *Handler) CheckUser(w http.ResponseWriter, r *http.Request) {
 
 	id, err := h.service.CheckUser(req.Username)
 	if err != nil {
-		errorResponse(w, err.Error(), http.StatusNoContent)
+		writeJSON(w, http.StatusNoContent, types.ErrorResponse{Message: "invalid username"})
+		return
 	}
 
 	token, err := createToken(req.Username)
 	if err != nil {
-		errorResponse(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: "internal server error"})
+		return
 	}
 
 	w.Header().Add("Authorization", "Bearer "+token)
-
-	writeJSON(w, types.CheckUserResponse{UserID: id})
+	writeJSON(w, http.StatusOK, types.CheckUserResponse{UserID: id})
 }
 
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	if !checkAuth(r) {
-		errorResponse(w, "invalid token", http.StatusUnauthorized)
+		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "invalid token"})
 		return
 	}
 
 	res, err := h.service.GetAllUsers()
 	if err != nil {
-		errorResponse(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: "internal server error"})
+		return
 	}
 
-	writeJSON(w, res)
+	writeJSON(w, http.StatusOK, res)
 }
 
 func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 	if !checkAuth(r) {
-		errorResponse(w, "invalid token", http.StatusUnauthorized)
+		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "invalid token"})
 		return
 	}
 
@@ -70,15 +72,16 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.service.GetUserById(id)
 	if err != nil {
-		errorResponse(w, err.Error(), http.StatusNoContent)
+		writeJSON(w, http.StatusNoContent, types.ErrorResponse{Message: "no content"})
+		return
 	}
 
-	writeJSON(w, res)
+	writeJSON(w, http.StatusOK, res)
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	if !checkAuth(r) {
-		errorResponse(w, "invalid token", http.StatusUnauthorized)
+		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "invalid token"})
 		return
 	}
 
@@ -87,15 +90,16 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.service.CreateUser(req)
 	if err != nil {
-		errorResponse(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: "internal server error"})
+		return
 	}
 
-	writeJSON(w, res)
+	writeJSON(w, http.StatusOK, res)
 }
 
 func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	if !checkAuth(r) {
-		errorResponse(w, "invalid token", http.StatusUnauthorized)
+		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "invalid token"})
 		return
 	}
 
@@ -107,13 +111,14 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	err := h.service.UpdateUser(id, req)
 	if err != nil {
-		errorResponse(w, err.Error(), http.StatusNoContent)
+		writeJSON(w, http.StatusNoContent, types.ErrorResponse{Message: "no content"})
+		return
 	}
 }
 
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	if !checkAuth(r) {
-		errorResponse(w, "invalid token", http.StatusUnauthorized)
+		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "invalid token"})
 		return
 	}
 
@@ -122,24 +127,13 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	err := h.service.DeleteUser(id)
 	if err != nil {
-		errorResponse(w, err.Error(), http.StatusNoContent)
+		writeJSON(w, http.StatusNoContent, types.ErrorResponse{Message: "no content"})
+		return
 	}
 }
 
-func writeJSON(w http.ResponseWriter, data interface{}) {
-	out, err := json.Marshal(data)
-	if err != nil {
-		errorResponse(w, err.Error(), http.StatusInternalServerError)
-	}
-
+func writeJSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(out)
-	if err != nil {
-		errorResponse(w, err.Error(), http.StatusInternalServerError)
-	}
-
-}
-
-func errorResponse(w http.ResponseWriter, message string, statusCode int) {
-	http.Error(w, message, statusCode)
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(data)
 }

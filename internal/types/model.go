@@ -34,3 +34,7 @@ type CheckUserResponse struct {
 type GetToken struct {
 	Username string `json:"username"`
 }
+
+type ErrorResponse struct {
+	Message string `json:"message"`
+}
