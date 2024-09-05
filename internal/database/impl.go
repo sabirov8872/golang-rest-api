@@ -28,11 +28,7 @@ func NewRepository(db *sql.DB) *Repository {
 func (repo *Repository) CheckUser(username string) (int64, error) {
 	var id int64
 	err := repo.DB.QueryRow(checkUserQuery, username).Scan(&id)
-	if err != nil {
-		return 0, err
-	}
-
-	return id, nil
+	return id, err
 }
 
 func (repo *Repository) GetAllUsers() (resp []*types.UserDB, err error) {
@@ -58,37 +54,21 @@ func (repo *Repository) GetAllUsers() (resp []*types.UserDB, err error) {
 func (repo *Repository) GetUserByID(id string) (*types.UserDB, error) {
 	var user types.UserDB
 	err := repo.DB.QueryRow(getUserByIdQuery, id).Scan(&user.ID, &user.FirstName, &user.Username, &user.Phone)
-	if err != nil {
-		return nil, err
-	}
-
-	return &user, nil
+	return &user, err
 }
 
 func (repo *Repository) CreateUser(req types.CreateUserRequest) (int64, error) {
 	var id int64
 	err := repo.DB.QueryRow(createUserQuery, req.FirstName, req.Username, req.Phone).Scan(&id)
-	if err != nil {
-		return 0, err
-	}
-
-	return id, nil
+	return id, err
 }
 
 func (repo *Repository) UpdateUser(id string, req types.UpdateUserRequest) error {
 	_, err := repo.DB.Query(updateUserQuery, req.FirstName, req.Username, req.Phone, id)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (repo *Repository) DeleteUser(id string) error {
 	_, err := repo.DB.Query(deleteUserQuery, id)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }

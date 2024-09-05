@@ -22,7 +22,7 @@ func NewConfig() (*Config, error) {
 		return nil, err
 	}
 
-	config := Config{
+	return &Config{
 		ServerPort: os.Getenv("SERVER_PORT"),
 		DBHost:     os.Getenv("DB_HOST"),
 		DBPort:     os.Getenv("DB_PORT"),
@@ -30,7 +30,5 @@ func NewConfig() (*Config, error) {
 		DBPassword: os.Getenv("DB_PASSWORD"),
 		DBName:     os.Getenv("DB_NAME"),
 		DBSSLMode:  os.Getenv("DB_SSL_MODE"),
-	}
-
-	return &config, nil
+	}, nil
 }

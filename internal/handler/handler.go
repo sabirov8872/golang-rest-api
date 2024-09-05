@@ -67,9 +67,7 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(r)
-	id := vars["id"]
-
+	id := getID(r)
 	res, err := h.service.GetUserById(id)
 	if err != nil {
 		writeJSON(w, http.StatusNoContent, types.ErrorResponse{Message: "no content"})
@@ -103,12 +101,9 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(r)
-	id := vars["id"]
-
 	var req types.UpdateUserRequest
 	json.NewDecoder(r.Body).Decode(&req)
-
+	id := getID(r)
 	err := h.service.UpdateUser(id, req)
 	if err != nil {
 		writeJSON(w, http.StatusNoContent, types.ErrorResponse{Message: "no content"})
@@ -122,9 +117,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(r)
-	id := vars["id"]
-
+	id := getID(r)
 	err := h.service.DeleteUser(id)
 	if err != nil {
 		writeJSON(w, http.StatusNoContent, types.ErrorResponse{Message: "no content"})
@@ -136,4 +129,9 @@ func writeJSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(data)
+}
+
+func getID(r *http.Request) string {
+	vars := mux.Vars(r)
+	return vars["id"]
 }

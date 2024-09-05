@@ -23,12 +23,7 @@ func NewService(repo database.IRepository) *Service {
 }
 
 func (s *Service) CheckUser(username string) (int64, error) {
-	id, err := s.repo.CheckUser(username)
-	if err != nil {
-		return 0, err
-	}
-
-	return id, nil
+	return s.repo.CheckUser(username)
 }
 
 func (s *Service) GetAllUsers() (*types.ListUserResponse, error) {
@@ -58,14 +53,12 @@ func (s *Service) GetUserById(id string) (*types.User, error) {
 		return nil, err
 	}
 
-	resp := &types.User{
+	return &types.User{
 		ID:        res.ID,
 		FirstName: res.FirstName,
 		Username:  res.Username,
 		Phone:     res.Phone,
-	}
-
-	return resp, nil
+	}, nil
 }
 
 func (s *Service) CreateUser(req types.CreateUserRequest) (*types.CreateUserResponse, error) {
