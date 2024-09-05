@@ -2,7 +2,12 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/gorilla/mux"
 	"github.com/sabirov8872/golang-rest-api/internal/service"
@@ -42,13 +47,13 @@ func (h *Handler) CheckUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("Authorization", "Bearer "+token)
+	w.Header().Set("Authorization", "Bearer "+token)
 	writeJSON(w, http.StatusOK, types.CheckUserResponse{UserID: id})
 }
 
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	if !checkAuth(r) {
-		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "invalid token"})
+	if err := checkAuth(r); err != nil {
+		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "unauthorized"})
 		return
 	}
 
@@ -62,8 +67,8 @@ func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
-	if !checkAuth(r) {
-		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "invalid token"})
+	if err := checkAuth(r); err != nil {
+		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "unauthorized"})
 		return
 	}
 
@@ -78,8 +83,8 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	if !checkAuth(r) {
-		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "invalid token"})
+	if err := checkAuth(r); err != nil {
+		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "unauthorized"})
 		return
 	}
 
@@ -96,8 +101,8 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
-	if !checkAuth(r) {
-		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "invalid token"})
+	if err := checkAuth(r); err != nil {
+		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "unauthorized"})
 		return
 	}
 
@@ -112,8 +117,8 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	if !checkAuth(r) {
-		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "invalid token"})
+	if err := checkAuth(r); err != nil {
+		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "unauthorized"})
 		return
 	}
 
@@ -134,4 +139,37 @@ func writeJSON(w http.ResponseWriter, statusCode int, data interface{}) {
 func getID(r *http.Request) string {
 	vars := mux.Vars(r)
 	return vars["id"]
+}
+
+func checkAuth(r *http.Request) error {
+	authHeader := r.Header.Get("Authorization")
+	authHeader = authHeader[len("Bearer "):]
+	secret := os.Getenv("SECRET_KEY")
+	token, err := jwt.Parse(authHeader, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte(secret), nil
+	})
+	if err != nil {
+		return err
+	}
+
+	if !token.Valid {
+		return fmt.Errorf("invalid token")
+	}
+
+	return nil
+}
+
+func createToken(username string) (string, error) {
+	claims := &jwt.MapClaims{
+		"username": username,
+		"exp":      time.Now().Add(time.Minute * 15).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	secret := os.Getenv("SECRET_KEY")
+	return token.SignedString([]byte(secret))
 }
