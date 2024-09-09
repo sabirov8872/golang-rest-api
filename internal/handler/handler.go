@@ -37,15 +37,15 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 
 	id, err := h.service.SignIn(req)
 	if err != nil {
-		writeJSON(w, http.StatusNoContent, types.ErrorResponse{Message: "invalid username or password"})
+		writeJSON(w, http.StatusBadRequest, types.ErrorResponse{Message: err.Error()})
 		return
 	}
 
-	if r.Header.Get("Authorization") == "" || checkAuth(r) != nil {
+	if checkAuth(r) != nil {
 		var token string
 		token, err = createToken(req.Username, id)
 		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: "internal server error"})
+			writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: err.Error()})
 			return
 		}
 
@@ -57,13 +57,13 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	if err := checkAuth(r); err != nil {
-		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "unauthorized"})
+		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: err.Error()})
 		return
 	}
 
 	res, err := h.service.GetAllUsers()
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: "internal server error"})
+		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: err.Error()})
 		return
 	}
 
@@ -72,14 +72,14 @@ func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 	if err := checkAuth(r); err != nil {
-		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "unauthorized"})
+		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: err.Error()})
 		return
 	}
 
 	id := getID(r)
 	res, err := h.service.GetUserById(id)
 	if err != nil {
-		writeJSON(w, http.StatusNoContent, types.ErrorResponse{Message: "no content"})
+		writeJSON(w, http.StatusBadRequest, types.ErrorResponse{Message: err.Error()})
 		return
 	}
 
@@ -92,7 +92,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.service.CreateUser(req)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: "internal server error"})
+		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: err.Error()})
 		return
 	}
 
@@ -101,7 +101,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	if err := checkAuth(r); err != nil {
-		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "unauthorized"})
+		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: err.Error()})
 		return
 	}
 
@@ -110,21 +110,21 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	id := getID(r)
 	err := h.service.UpdateUser(id, req)
 	if err != nil {
-		writeJSON(w, http.StatusNoContent, types.ErrorResponse{Message: "no content"})
+		writeJSON(w, http.StatusNoContent, nil)
 		return
 	}
 }
 
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	if err := checkAuth(r); err != nil {
-		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "unauthorized"})
+		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: err.Error()})
 		return
 	}
 
 	id := getID(r)
 	err := h.service.DeleteUser(id)
 	if err != nil {
-		writeJSON(w, http.StatusNoContent, types.ErrorResponse{Message: "no content"})
+		writeJSON(w, http.StatusNoContent, nil)
 		return
 	}
 }
@@ -132,12 +132,14 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 func writeJSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(data)
+	err := json.NewEncoder(w).Encode(data)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func getID(r *http.Request) string {
-	vars := mux.Vars(r)
-	return vars["id"]
+	return mux.Vars(r)["id"]
 }
 
 func checkAuth(r *http.Request) error {
