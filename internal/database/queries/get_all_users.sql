@@ -1,6 +1,7 @@
 SELECT
     id,
     firstname,
+    lastname,
     username,
-    phone
+    password
     FROM users

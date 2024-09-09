@@ -11,7 +11,7 @@ type Repository struct {
 }
 
 type IRepository interface {
-	CheckUser(string) (int64, error)
+	SignIn(user types.SignIn) (int64, error)
 	GetAllUsers() (resp []*types.UserDB, err error)
 	GetUserByID(id string) (*types.UserDB, error)
 	CreateUser(req types.CreateUserRequest) (int64, error)
@@ -25,9 +25,9 @@ func NewRepository(db *sql.DB) *Repository {
 	}
 }
 
-func (repo *Repository) CheckUser(username string) (int64, error) {
+func (repo *Repository) SignIn(u types.SignIn) (int64, error) {
 	var id int64
-	err := repo.DB.QueryRow(checkUserQuery, username).Scan(&id)
+	err := repo.DB.QueryRow(checkUserQuery, u.Username, u.Password).Scan(&id)
 	return id, err
 }
 
@@ -39,32 +39,32 @@ func (repo *Repository) GetAllUsers() (resp []*types.UserDB, err error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var user types.UserDB
-		err = rows.Scan(&user.ID, &user.FirstName, &user.Username, &user.Phone)
+		var u types.UserDB
+		err = rows.Scan(&u.ID, &u.Firstname, &u.Lastname, &u.Username, &u.Password)
 		if err != nil {
 			return nil, err
 		}
 
-		resp = append(resp, &user)
+		resp = append(resp, &u)
 	}
 
 	return resp, nil
 }
 
 func (repo *Repository) GetUserByID(id string) (*types.UserDB, error) {
-	var user types.UserDB
-	err := repo.DB.QueryRow(getUserByIdQuery, id).Scan(&user.ID, &user.FirstName, &user.Username, &user.Phone)
-	return &user, err
+	var u types.UserDB
+	err := repo.DB.QueryRow(getUserByIdQuery, id).Scan(&u.ID, &u.Firstname, &u.Lastname, &u.Username, &u.Password)
+	return &u, err
 }
 
 func (repo *Repository) CreateUser(req types.CreateUserRequest) (int64, error) {
 	var id int64
-	err := repo.DB.QueryRow(createUserQuery, req.FirstName, req.Username, req.Phone).Scan(&id)
+	err := repo.DB.QueryRow(createUserQuery, req.Firstname, req.Lastname, req.Username, req.Password).Scan(&id)
 	return id, err
 }
 
 func (repo *Repository) UpdateUser(id string, req types.UpdateUserRequest) error {
-	_, err := repo.DB.Query(updateUserQuery, req.FirstName, req.Username, req.Phone, id)
+	_, err := repo.DB.Exec(updateUserQuery, req.Firstname, req.Lastname, req.Username, req.Password, id)
 	return err
 }
 

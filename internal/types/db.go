@@ -2,7 +2,8 @@ package types
 
 type UserDB struct {
 	ID        int64  `db:"id"`
-	FirstName string `db:"first_name"`
+	Firstname string `db:"firstname"`
+	Lastname  string `db:"lastname"`
 	Username  string `db:"username"`
-	Phone     string `db:"phone"`
+	Password  string `db:"password"`
 }

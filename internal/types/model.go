@@ -2,9 +2,10 @@ package types
 
 type User struct {
 	ID        int64  `json:"id"`
-	FirstName string `json:"firstName"`
+	Firstname string `json:"firstname"`
+	Lastname  string `json:"lastname"`
 	Username  string `json:"username"`
-	Phone     string `json:"phone"`
+	Password  string `json:"password"`
 }
 
 type ListUserResponse struct {
@@ -12,9 +13,10 @@ type ListUserResponse struct {
 }
 
 type CreateUserRequest struct {
-	FirstName string `json:"firstName"`
+	Firstname string `json:"firstname"`
+	Lastname  string `json:"lastname"`
 	Username  string `json:"username"`
-	Phone     string `json:"phone"`
+	Password  string `json:"password"`
 }
 
 type CreateUserResponse struct {
@@ -22,17 +24,19 @@ type CreateUserResponse struct {
 }
 
 type UpdateUserRequest struct {
-	FirstName string `json:"firstName"`
+	Firstname string `json:"firstname"`
+	Lastname  string `json:"lastname"`
 	Username  string `json:"username"`
-	Phone     string `json:"phone"`
+	Password  string `json:"password"`
 }
 
 type CheckUserResponse struct {
 	UserID int64 `json:"userId"`
 }
 
-type GetToken struct {
+type SignIn struct {
 	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 type ErrorResponse struct {

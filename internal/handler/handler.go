@@ -2,13 +2,13 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-
 	"github.com/gorilla/mux"
 	"github.com/sabirov8872/golang-rest-api/internal/service"
 	"github.com/sabirov8872/golang-rest-api/internal/types"
@@ -19,7 +19,7 @@ type Handler struct {
 }
 
 type IHandler interface {
-	CheckUser(w http.ResponseWriter, r *http.Request)
+	SignIn(w http.ResponseWriter, r *http.Request)
 	GetAllUsers(w http.ResponseWriter, r *http.Request)
 	GetUserById(w http.ResponseWriter, r *http.Request)
 	CreateUser(w http.ResponseWriter, r *http.Request)
@@ -31,23 +31,27 @@ func NewHandler(service service.IService) *Handler {
 	return &Handler{service: service}
 }
 
-func (h *Handler) CheckUser(w http.ResponseWriter, r *http.Request) {
-	var req types.GetToken
+func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
+	var req types.SignIn
 	json.NewDecoder(r.Body).Decode(&req)
 
-	id, err := h.service.CheckUser(req.Username)
+	id, err := h.service.SignIn(req)
 	if err != nil {
 		writeJSON(w, http.StatusNoContent, types.ErrorResponse{Message: "invalid username"})
 		return
 	}
 
-	token, err := createToken(req.Username)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: "internal server error"})
-		return
+	if r.Header.Get("Authorization") == "" || checkAuth(r) != nil {
+		var token string
+		token, err = createToken(req.Username, id)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: "internal server error"})
+			return
+		}
+
+		w.Header().Add("Authorization", "Bearer "+token)
 	}
 
-	w.Header().Set("Authorization", "Bearer "+token)
 	writeJSON(w, http.StatusOK, types.CheckUserResponse{UserID: id})
 }
 
@@ -83,11 +87,6 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	if err := checkAuth(r); err != nil {
-		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: "unauthorized"})
-		return
-	}
-
 	var req types.CreateUserRequest
 	json.NewDecoder(r.Body).Decode(&req)
 
@@ -143,6 +142,10 @@ func getID(r *http.Request) string {
 
 func checkAuth(r *http.Request) error {
 	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return errors.New("unauthorized")
+	}
+
 	authHeader = authHeader[len("Bearer "):]
 	secret := os.Getenv("SECRET_KEY")
 	token, err := jwt.Parse(authHeader, func(token *jwt.Token) (interface{}, error) {
@@ -163,9 +166,10 @@ func checkAuth(r *http.Request) error {
 	return nil
 }
 
-func createToken(username string) (string, error) {
+func createToken(username string, id int64) (string, error) {
 	claims := &jwt.MapClaims{
 		"username": username,
+		"id":       id,
 		"exp":      time.Now().Add(time.Minute * 15).Unix(),
 	}
 

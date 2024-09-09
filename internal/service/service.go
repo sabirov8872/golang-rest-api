@@ -10,7 +10,7 @@ type Service struct {
 }
 
 type IService interface {
-	CheckUser(resp string) (int64, error)
+	SignIn(in types.SignIn) (int64, error)
 	GetAllUsers() (*types.ListUserResponse, error)
 	GetUserById(id string) (*types.User, error)
 	CreateUser(req types.CreateUserRequest) (*types.CreateUserResponse, error)
@@ -22,8 +22,8 @@ func NewService(repo database.IRepository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) CheckUser(username string) (int64, error) {
-	return s.repo.CheckUser(username)
+func (s *Service) SignIn(u types.SignIn) (int64, error) {
+	return s.repo.SignIn(u)
 }
 
 func (s *Service) GetAllUsers() (*types.ListUserResponse, error) {
@@ -36,9 +36,10 @@ func (s *Service) GetAllUsers() (*types.ListUserResponse, error) {
 	for i, v := range res {
 		resp[i] = &types.User{
 			ID:        v.ID,
-			FirstName: v.FirstName,
+			Firstname: v.Firstname,
+			Lastname:  v.Lastname,
 			Username:  v.Username,
-			Phone:     v.Phone,
+			Password:  v.Password,
 		}
 	}
 
@@ -55,9 +56,10 @@ func (s *Service) GetUserById(id string) (*types.User, error) {
 
 	return &types.User{
 		ID:        res.ID,
-		FirstName: res.FirstName,
+		Firstname: res.Firstname,
+		Lastname:  res.Lastname,
 		Username:  res.Username,
-		Phone:     res.Phone,
+		Password:  res.Password,
 	}, nil
 }
 

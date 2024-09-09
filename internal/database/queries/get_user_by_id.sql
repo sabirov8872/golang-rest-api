@@ -1,1 +1,7 @@
-SELECT id, firstname, username, phone FROM users WHERE id = $1
+SELECT id,
+       firstname,
+       lastname,
+       username,
+       password
+FROM users
+WHERE id = $1

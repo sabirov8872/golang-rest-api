@@ -1,1 +1,6 @@
-INSERT INTO users (firstname, username, phone) VALUES ($1, $2, $3) RETURNING id
+INSERT INTO users (firstname,
+                   lastname,
+                   username,
+                   password)
+VALUES ($1, $2, $3, $4)
+RETURNING id
