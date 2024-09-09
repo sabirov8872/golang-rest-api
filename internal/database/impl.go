@@ -64,7 +64,7 @@ func (repo *Repository) CreateUser(req types.CreateUserRequest) (int64, error) {
 }
 
 func (repo *Repository) UpdateUser(id string, req types.UpdateUserRequest) error {
-	_, err := repo.DB.Exec(updateUserQuery, req.Firstname, req.Lastname, req.Username, req.Password, id)
+	_, err := repo.DB.Query(updateUserQuery, req.Firstname, req.Lastname, req.Username, req.Password, id)
 	return err
 }
 

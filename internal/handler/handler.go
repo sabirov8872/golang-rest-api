@@ -37,7 +37,7 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 
 	id, err := h.service.SignIn(req)
 	if err != nil {
-		writeJSON(w, http.StatusNoContent, types.ErrorResponse{Message: "invalid username"})
+		writeJSON(w, http.StatusNoContent, types.ErrorResponse{Message: "invalid username or password"})
 		return
 	}
 

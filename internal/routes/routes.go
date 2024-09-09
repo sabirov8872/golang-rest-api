@@ -1,4 +1,4 @@
-package routesd
+package routes
 
 import (
 	"log"

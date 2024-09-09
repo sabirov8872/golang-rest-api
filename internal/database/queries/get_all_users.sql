@@ -4,4 +4,4 @@ SELECT
     lastname,
     username,
     password
-    FROM users
+FROM users
