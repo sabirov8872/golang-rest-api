@@ -39,13 +39,13 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 
 	s, err := h.service.SignIn(req.Username)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, types.ErrorResponse{Message: err.Error()})
+		writeJSON(w, http.StatusBadRequest, types.ErrorResponse{Message: "invalid username or password"})
 		return
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(s.Password), []byte(req.Password))
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, types.ErrorResponse{Message: err.Error()})
+		writeJSON(w, http.StatusBadRequest, types.ErrorResponse{Message: "invalid username or password"})
 		return
 	}
 
@@ -189,8 +189,8 @@ func checkAuth(r *http.Request) error {
 
 func createToken(username string, id int64) (string, error) {
 	claims := &jwt.MapClaims{
-		"username": username,
 		"id":       id,
+		"username": username,
 		"exp":      time.Now().Add(time.Minute * 15).Unix(),
 	}
 

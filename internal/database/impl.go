@@ -28,7 +28,11 @@ func NewRepository(db *sql.DB) *Repository {
 func (repo *Repository) SignIn(username string) (*types.SignInDB, error) {
 	var s types.SignInDB
 	err := repo.DB.QueryRow(signInQuery, username).Scan(&s.ID, &s.Password)
-	return &s, err
+	if err != nil {
+		return nil, err
+	}
+
+	return &s, nil
 }
 
 func (repo *Repository) GetAllUsers() (resp []*types.UserDB, err error) {
@@ -54,13 +58,19 @@ func (repo *Repository) GetAllUsers() (resp []*types.UserDB, err error) {
 func (repo *Repository) GetUserByID(id string) (*types.UserDB, error) {
 	var u types.UserDB
 	err := repo.DB.QueryRow(getUserByIdQuery, id).Scan(&u.ID, &u.Firstname, &u.Lastname, &u.Username, &u.Password)
-	return &u, err
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
 }
 
 func (repo *Repository) CreateUser(req types.CreateUserRequest) (int64, error) {
 	var id int64
 	err := repo.DB.QueryRow(createUserQuery, req.Firstname, req.Lastname, req.Username, req.Password).Scan(&id)
-	return id, err
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
 }
 
 func (repo *Repository) UpdateUser(id string, req types.UpdateUserRequest) error {
