@@ -30,8 +30,9 @@ type UpdateUserRequest struct {
 	Password  string `json:"password"`
 }
 
-type CheckUserResponse struct {
-	UserID int64 `json:"userId"`
+type SignInResponse struct {
+	UserID int64  `json:"userId"`
+	Token  string `json:"token"`
 }
 
 type SignIn struct {

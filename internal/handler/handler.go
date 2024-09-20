@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 	"github.com/sabirov8872/golang-rest-api/internal/service"
@@ -35,24 +37,26 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 	var req types.SignIn
 	json.NewDecoder(r.Body).Decode(&req)
 
-	id, err := h.service.SignIn(req)
+	s, err := h.service.SignIn(req.Username)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, types.ErrorResponse{Message: err.Error()})
 		return
 	}
 
-	if checkAuth(r) != nil {
-		var token string
-		token, err = createToken(req.Username, id)
-		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: err.Error()})
-			return
-		}
-
-		w.Header().Add("Authorization", "Bearer "+token)
+	err = bcrypt.CompareHashAndPassword([]byte(s.Password), []byte(req.Password))
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, types.ErrorResponse{Message: err.Error()})
+		return
 	}
 
-	writeJSON(w, http.StatusOK, types.CheckUserResponse{UserID: id})
+	var token string
+	token, err = createToken(req.Username, s.ID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, types.SignInResponse{UserID: s.ID, Token: token})
 }
 
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
@@ -90,6 +94,13 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req types.CreateUserRequest
 	json.NewDecoder(r.Body).Decode(&req)
 
+	hashedPassword, err := hashingPassword(req.Password)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, types.ErrorResponse{Message: err.Error()})
+		return
+	}
+	req.Password = hashedPassword
+
 	res, err := h.service.CreateUser(req)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: err.Error()})
@@ -107,8 +118,16 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	var req types.UpdateUserRequest
 	json.NewDecoder(r.Body).Decode(&req)
+
+	hashedPassword, err := hashingPassword(req.Password)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, types.ErrorResponse{Message: err.Error()})
+		return
+	}
+	req.Password = hashedPassword
+
 	id := getID(r)
-	err := h.service.UpdateUser(id, req)
+	err = h.service.UpdateUser(id, req)
 	if err != nil {
 		writeJSON(w, http.StatusNoContent, nil)
 		return
@@ -178,4 +197,12 @@ func createToken(username string, id int64) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	secret := os.Getenv("SECRET_KEY")
 	return token.SignedString([]byte(secret))
+}
+
+func hashingPassword(password string) (string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedPassword), nil
 }

@@ -10,7 +10,7 @@ type Service struct {
 }
 
 type IService interface {
-	SignIn(in types.SignIn) (int64, error)
+	SignIn(username string) (*types.SignInDB, error)
 	GetAllUsers() (*types.ListUserResponse, error)
 	GetUserById(id string) (*types.User, error)
 	CreateUser(req types.CreateUserRequest) (*types.CreateUserResponse, error)
@@ -22,8 +22,8 @@ func NewService(repo database.IRepository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) SignIn(u types.SignIn) (int64, error) {
-	return s.repo.SignIn(u)
+func (s *Service) SignIn(username string) (*types.SignInDB, error) {
+	return s.repo.SignIn(username)
 }
 
 func (s *Service) GetAllUsers() (*types.ListUserResponse, error) {
