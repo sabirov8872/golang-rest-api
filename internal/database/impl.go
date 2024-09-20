@@ -27,7 +27,7 @@ func NewRepository(db *sql.DB) *Repository {
 
 func (repo *Repository) SignIn(username string) (*types.SignInDB, error) {
 	var s types.SignInDB
-	err := repo.DB.QueryRow(checkUserQuery, username).Scan(&s.ID, &s.Password)
+	err := repo.DB.QueryRow(signInQuery, username).Scan(&s.ID, &s.Password)
 	return &s, err
 }
 

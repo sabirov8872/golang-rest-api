@@ -19,6 +19,6 @@ var (
 	//go:embed queries/delete_user.sql
 	deleteUserQuery string
 
-	//go:embed queries/check_user.sql
-	checkUserQuery string
+	//go:embed queries/sign_in.sql
+	signInQuery string
 )
