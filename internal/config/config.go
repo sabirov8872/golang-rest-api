@@ -7,6 +7,7 @@ import (
 )
 
 type Config struct {
+	SecretKey  string
 	ServerPort string
 	DBHost     string
 	DBPort     string
@@ -23,6 +24,7 @@ func NewConfig() (*Config, error) {
 	}
 
 	return &Config{
+		SecretKey:  os.Getenv("SECRET_KEY"),
 		ServerPort: os.Getenv("SERVER_PORT"),
 		DBHost:     os.Getenv("DB_HOST"),
 		DBPort:     os.Getenv("DB_PORT"),

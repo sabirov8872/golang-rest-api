@@ -2,10 +2,8 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -17,11 +15,11 @@ import (
 )
 
 type Handler struct {
-	service service.IService
+	service   service.IService
+	secretKey string
 }
 
 type IHandler interface {
-	AuthMiddleware(handler http.HandlerFunc) http.HandlerFunc
 	SignIn(w http.ResponseWriter, r *http.Request)
 	GetAllUsers(w http.ResponseWriter, r *http.Request)
 	GetUserById(w http.ResponseWriter, r *http.Request)
@@ -30,17 +28,10 @@ type IHandler interface {
 	DeleteUser(w http.ResponseWriter, r *http.Request)
 }
 
-func NewHandler(service service.IService) *Handler {
-	return &Handler{service: service}
-}
-
-func (h *Handler) AuthMiddleware(handler http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := checkAuth(r); err != nil {
-			writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: err.Error()})
-			return
-		}
-		handler(w, r)
+func NewHandler(service service.IService, secretKey string) *Handler {
+	return &Handler{
+		service:   service,
+		secretKey: secretKey,
 	}
 }
 
@@ -61,7 +52,7 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var token string
-	token, err = createToken(req.Username, s.ID)
+	token, err = createToken(req.Username, s.ID, h.secretKey)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: err.Error()})
 		return
@@ -152,33 +143,7 @@ func getID(r *http.Request) string {
 	return mux.Vars(r)["id"]
 }
 
-func checkAuth(r *http.Request) error {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		return errors.New("unauthorized")
-	}
-
-	authHeader = authHeader[len("Bearer "):]
-	secret := os.Getenv("SECRET_KEY")
-	token, err := jwt.Parse(authHeader, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-
-		return []byte(secret), nil
-	})
-	if err != nil {
-		return err
-	}
-
-	if !token.Valid {
-		return fmt.Errorf("invalid token")
-	}
-
-	return nil
-}
-
-func createToken(username string, id int64) (string, error) {
+func createToken(username string, id int64, secretKey string) (string, error) {
 	claims := &jwt.MapClaims{
 		"id":       id,
 		"username": username,
@@ -186,12 +151,11 @@ func createToken(username string, id int64) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	secret := os.Getenv("SECRET_KEY")
-	return token.SignedString([]byte(secret))
+	return token.SignedString([]byte(secretKey))
 }
 
 func hashingPassword(password string) (string, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
 		return "", err
 	}

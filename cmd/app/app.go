@@ -14,13 +14,13 @@ import (
 )
 
 func Run() {
-	cnf, err := config.NewConfig()
+	cfg, err := config.NewConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	dbPath := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		cnf.DBHost, cnf.DBPort, cnf.DBUser, cnf.DBPassword, cnf.DBName, cnf.DBSSLMode)
+		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBSSLMode)
 
 	db, err := sql.Open("postgres", dbPath)
 	if err != nil {
@@ -30,6 +30,6 @@ func Run() {
 
 	repo := database.NewRepository(db)
 	serv := service.NewService(repo)
-	hand := handler.NewHandler(serv)
-	routes.Run(hand, cnf.ServerPort)
+	hand := handler.NewHandler(serv, cfg.SecretKey)
+	routes.Run(hand, cfg.ServerPort, cfg.SecretKey)
 }
