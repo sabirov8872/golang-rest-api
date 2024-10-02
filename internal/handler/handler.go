@@ -21,6 +21,7 @@ type Handler struct {
 }
 
 type IHandler interface {
+	AuthMiddleware(handler http.HandlerFunc) http.HandlerFunc
 	SignIn(w http.ResponseWriter, r *http.Request)
 	GetAllUsers(w http.ResponseWriter, r *http.Request)
 	GetUserById(w http.ResponseWriter, r *http.Request)
@@ -33,8 +34,18 @@ func NewHandler(service service.IService) *Handler {
 	return &Handler{service: service}
 }
 
+func (h *Handler) AuthMiddleware(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := checkAuth(r); err != nil {
+			writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: err.Error()})
+			return
+		}
+		handler(w, r)
+	}
+}
+
 func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
-	var req types.SignIn
+	var req types.SignInRequest
 	json.NewDecoder(r.Body).Decode(&req)
 
 	s, err := h.service.SignIn(req.Username)
@@ -60,11 +71,6 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	if err := checkAuth(r); err != nil {
-		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: err.Error()})
-		return
-	}
-
 	res, err := h.service.GetAllUsers()
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: err.Error()})
@@ -75,11 +81,6 @@ func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
-	if err := checkAuth(r); err != nil {
-		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: err.Error()})
-		return
-	}
-
 	id := getID(r)
 	res, err := h.service.GetUserById(id)
 	if err != nil {
@@ -111,11 +112,6 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
-	if err := checkAuth(r); err != nil {
-		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: err.Error()})
-		return
-	}
-
 	var req types.UpdateUserRequest
 	json.NewDecoder(r.Body).Decode(&req)
 
@@ -135,11 +131,6 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	if err := checkAuth(r); err != nil {
-		writeJSON(w, http.StatusUnauthorized, types.ErrorResponse{Message: err.Error()})
-		return
-	}
-
 	id := getID(r)
 	err := h.service.DeleteUser(id)
 	if err != nil {
@@ -148,7 +139,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func writeJSON(w http.ResponseWriter, statusCode int, data interface{}) {
+func writeJSON(w http.ResponseWriter, statusCode int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	err := json.NewEncoder(w).Encode(data)

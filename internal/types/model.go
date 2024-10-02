@@ -35,7 +35,7 @@ type SignInResponse struct {
 	Token  string `json:"token"`
 }
 
-type SignIn struct {
+type SignInRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
