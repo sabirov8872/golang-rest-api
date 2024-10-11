@@ -75,7 +75,7 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 	id := getID(r)
 	res, err := h.service.GetUserById(id)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, types.ErrorResponse{Message: err.Error()})
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
@@ -88,7 +88,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	hashedPassword, err := hashingPassword(req.Password)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, types.ErrorResponse{Message: err.Error()})
+		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: err.Error()})
 		return
 	}
 	req.Password = hashedPassword
@@ -108,7 +108,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	hashedPassword, err := hashingPassword(req.Password)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, types.ErrorResponse{Message: err.Error()})
+		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: err.Error()})
 		return
 	}
 	req.Password = hashedPassword
@@ -116,7 +116,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	id := getID(r)
 	err = h.service.UpdateUser(id, req)
 	if err != nil {
-		writeJSON(w, http.StatusNoContent, nil)
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 }
@@ -125,7 +125,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := getID(r)
 	err := h.service.DeleteUser(id)
 	if err != nil {
-		writeJSON(w, http.StatusNoContent, nil)
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 }
