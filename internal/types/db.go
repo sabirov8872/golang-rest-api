@@ -8,7 +8,7 @@ type UserDB struct {
 	Password  string `db:"password"`
 }
 
-type SignInDB struct {
+type GetUserByUserDB struct {
 	ID       int64  `db:"id"`
 	Password string `db:"password"`
 }

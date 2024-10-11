@@ -11,7 +11,7 @@ type Repository struct {
 }
 
 type IRepository interface {
-	SignIn(username string) (*types.SignInDB, error)
+	GetUserByUser(username string) (*types.GetUserByUserDB, error)
 	GetAllUsers() (resp []*types.UserDB, err error)
 	GetUserByID(id string) (*types.UserDB, error)
 	CreateUser(req types.CreateUserRequest) (int64, error)
@@ -25,8 +25,8 @@ func NewRepository(db *sql.DB) *Repository {
 	}
 }
 
-func (repo *Repository) SignIn(username string) (*types.SignInDB, error) {
-	var s types.SignInDB
+func (repo *Repository) GetUserByUser(username string) (*types.GetUserByUserDB, error) {
+	var s types.GetUserByUserDB
 	err := repo.DB.QueryRow(signInQuery, username).Scan(&s.ID, &s.Password)
 	if err != nil {
 		return nil, err
@@ -61,6 +61,7 @@ func (repo *Repository) GetUserByID(id string) (*types.UserDB, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &u, nil
 }
 
@@ -70,6 +71,7 @@ func (repo *Repository) CreateUser(req types.CreateUserRequest) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	return id, nil
 }
 

@@ -20,7 +20,7 @@ type Handler struct {
 }
 
 type IHandler interface {
-	SignIn(w http.ResponseWriter, r *http.Request)
+	GetUserByUser(w http.ResponseWriter, r *http.Request)
 	GetAllUsers(w http.ResponseWriter, r *http.Request)
 	GetUserById(w http.ResponseWriter, r *http.Request)
 	CreateUser(w http.ResponseWriter, r *http.Request)
@@ -35,8 +35,8 @@ func NewHandler(service service.IService, secretKey string) *Handler {
 	}
 }
 
-func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
-	var req types.SignInRequest
+func (h *Handler) GetUserByUser(w http.ResponseWriter, r *http.Request) {
+	var req types.GetUserByUserRequest
 	json.NewDecoder(r.Body).Decode(&req)
 
 	s, err := h.service.SignIn(req.Username)
@@ -58,7 +58,7 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, types.SignInResponse{UserID: s.ID, Token: token})
+	writeJSON(w, http.StatusOK, types.GetUserByUserResponse{UserID: s.ID, Token: token})
 }
 
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {

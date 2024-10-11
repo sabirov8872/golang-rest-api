@@ -15,7 +15,7 @@ func TestRepository_SignIn(t *testing.T) {
 	}
 
 	type want struct {
-		userdata *types.SignInDB
+		userdata *types.GetUserByUserDB
 		err      error
 	}
 
@@ -42,8 +42,8 @@ func TestRepository_SignIn(t *testing.T) {
 
 				mock.ExpectQuery(
 					`SELECT id, password
-					FROM users
-					WHERE username = \$1`).
+						FROM users
+						WHERE username = \$1`).
 					WithArgs(args.username).
 					WillReturnRows(
 						mock.NewRows([]string{"id", "password"}).
@@ -55,7 +55,7 @@ func TestRepository_SignIn(t *testing.T) {
 				return err
 			},
 			want: want{
-				userdata: &types.SignInDB{
+				userdata: &types.GetUserByUserDB{
 					ID:       1,
 					Password: "testpass",
 				},
@@ -75,8 +75,8 @@ func TestRepository_SignIn(t *testing.T) {
 
 				mock.ExpectQuery(
 					`SELECT id, password
-					FROM users
-					WHERE username = \$1`).
+						FROM users
+						WHERE username = \$1`).
 					WithArgs(args.username).
 					WillReturnError(sql.ErrNoRows)
 
@@ -96,7 +96,7 @@ func TestRepository_SignIn(t *testing.T) {
 			ff := fields{}
 			require.NoError(t, tt.prepare(tt.args, &ff))
 			repo := NewRepository(ff.db)
-			got, err := repo.SignIn(tt.args.username)
+			got, err := repo.GetUserByUser(tt.args.username)
 			require.Equal(t, tt.want.err, err)
 			require.Equal(t, tt.want.userdata, got)
 		})
@@ -248,12 +248,12 @@ func TestRepository_GetUserByID(t *testing.T) {
 
 				mock.ExpectQuery(
 					`SELECT id,
-					firstname,
-					lastname,
-					username,
-					password
-					FROM users
-					WHERE id = \$1`).
+							firstname,
+							lastname,
+							username,
+							password
+						FROM users
+						WHERE id = \$1`).
 					WithArgs(args.id).
 					WillReturnRows(
 						mock.NewRows([]string{"id", "firstname", "lastname", "username", "password"}).
@@ -279,12 +279,12 @@ func TestRepository_GetUserByID(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				mock.ExpectQuery(`
-							SELECT id,
-								   firstname,
-								   lastname,
-								   username,
-								   password
+				mock.ExpectQuery(
+					`SELECT id,
+							    firstname,
+							    lastname,
+								username,
+								password
 							FROM users
 							WHERE id = \$1`).
 					WithArgs(args.id).
@@ -350,7 +350,10 @@ func TestRepository_CreateUser(t *testing.T) {
 				}
 
 				mock.ExpectQuery(
-					`INSERT INTO users \(firstname, lastname, username, password\)
+					`INSERT INTO users \(firstname, 
+                    		lastname, 
+                    		username, 
+                    		password\)
 						VALUES \(\$1, \$2, \$3, \$4\)
 						RETURNING id`).
 					WithArgs(args.req.Firstname, args.req.Lastname, args.req.Username, args.req.Password).
@@ -536,7 +539,7 @@ func TestRepository_DeleteUser(t *testing.T) {
 
 				mock.ExpectQuery(
 					`DELETE FROM users
-					WHERE id = \$1`).
+						WHERE id = \$1`).
 					WithArgs(args.id).
 					WillReturnRows(
 						mock.NewRows([]string{}))
@@ -560,7 +563,8 @@ func TestRepository_DeleteUser(t *testing.T) {
 
 				mock.ExpectQuery(
 					`DELETE FROM users
-					WHERE id = \$1`).WithArgs(args.id).
+						WHERE id = \$1`).
+					WithArgs(args.id).
 					WillReturnError(sql.ErrNoRows)
 
 				fields.db = db

@@ -14,10 +14,10 @@ import (
 
 func Run(handler handler.IHandler, port string, secretKey string) {
 	router := mux.NewRouter()
-	router.HandleFunc("/sign_in", handler.SignIn).Methods("GET")
+	router.HandleFunc("/sign_in", handler.GetUserByUser).Methods("GET")
 	router.HandleFunc("/user", AuthMiddleware(secretKey, handler.GetAllUsers)).Methods("GET")
-	router.HandleFunc("/user/{id}", AuthMiddleware(secretKey, handler.GetUserById)).Methods("GET")
 	router.HandleFunc("/user", AuthMiddleware(secretKey, handler.CreateUser)).Methods("POST")
+	router.HandleFunc("/user/{id}", AuthMiddleware(secretKey, handler.GetUserById)).Methods("GET")
 	router.HandleFunc("/user/{id}", AuthMiddleware(secretKey, handler.UpdateUser)).Methods("PUT")
 	router.HandleFunc("/user/{id}", AuthMiddleware(secretKey, handler.DeleteUser)).Methods("DELETE")
 
