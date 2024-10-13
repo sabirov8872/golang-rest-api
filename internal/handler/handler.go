@@ -39,7 +39,7 @@ func (h *Handler) GetUserByUser(w http.ResponseWriter, r *http.Request) {
 	var req types.GetUserByUserRequest
 	json.NewDecoder(r.Body).Decode(&req)
 
-	s, err := h.service.SignIn(req.Username)
+	s, err := h.service.GetUserByUser(req.Username)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, types.ErrorResponse{Message: "invalid username or password"})
 		return
@@ -64,7 +64,7 @@ func (h *Handler) GetUserByUser(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	res, err := h.service.GetAllUsers()
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: err.Error()})
+		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: "internal server error"})
 		return
 	}
 
@@ -95,7 +95,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.service.CreateUser(req)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: err.Error()})
+		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: "internal server error"})
 		return
 	}
 

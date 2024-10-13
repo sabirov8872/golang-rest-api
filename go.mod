@@ -10,7 +10,10 @@ require (
 	golang.org/x/crypto v0.28.0
 )
 
-require github.com/DATA-DOG/go-sqlmock v1.5.2
+require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
+	github.com/golang/mock v1.6.0
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

@@ -5,12 +5,14 @@ import (
 	"github.com/sabirov8872/golang-rest-api/internal/types"
 )
 
+//go:generate mockgen -source=C:/Users/Pro/Desktop/golang-rest-api/internal/service/service.go -destination=mock/mock.go
+
 type Service struct {
 	repo database.IRepository
 }
 
 type IService interface {
-	SignIn(username string) (*types.GetUserByUserDB, error)
+	GetUserByUser(username string) (*types.GetUserByUserDB, error)
 	GetAllUsers() (*types.ListUserResponse, error)
 	GetUserById(id string) (*types.User, error)
 	CreateUser(req types.CreateUserRequest) (*types.CreateUserResponse, error)
@@ -22,7 +24,7 @@ func NewService(repo database.IRepository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) SignIn(username string) (*types.GetUserByUserDB, error) {
+func (s *Service) GetUserByUser(username string) (*types.GetUserByUserDB, error) {
 	return s.repo.GetUserByUser(username)
 }
 

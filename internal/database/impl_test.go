@@ -6,10 +6,18 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/sabirov8872/golang-rest-api/internal/types"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestRepository_SignIn(t *testing.T) {
+func TestRepository_GetUserByUser(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	repo := NewRepository(db)
+
 	type args struct {
 		username string
 	}
@@ -19,104 +27,82 @@ func TestRepository_SignIn(t *testing.T) {
 		err      error
 	}
 
-	type fields struct {
-		db *sql.DB
-	}
-
 	tests := []struct {
 		name    string
 		args    args
 		want    want
-		prepare func(args, *fields) error
+		prepare func(args)
 	}{
 		{
 			name: "success case",
 			args: args{
 				username: "test",
 			},
-			prepare: func(args args, fields *fields) error {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
+			want: want{
+				userdata: &types.GetUserByUserDB{
+					ID:       1,
+					Password: "test",
+				},
+				err: nil,
+			},
+			prepare: func(a args) {
+				rows := sqlmock.NewRows([]string{"id", "username"}).
+					AddRow(1, "test")
 
 				mock.ExpectQuery(
 					`SELECT id, password
 						FROM users
 						WHERE username = \$1`).
-					WithArgs(args.username).
-					WillReturnRows(
-						mock.NewRows([]string{"id", "password"}).
-							AddRow(1, "testpass"),
-					)
-
-				fields.db = db
-
-				return err
-			},
-			want: want{
-				userdata: &types.GetUserByUserDB{
-					ID:       1,
-					Password: "testpass",
-				},
-				err: nil,
+					WithArgs(a.username).
+					WillReturnRows(rows)
 			},
 		},
 		{
 			name: "fail case",
-			args: args{
-				username: "bar",
+			want: want{
+				userdata: nil,
+				err:      sql.ErrNoRows,
 			},
-			prepare: func(args args, fields *fields) error {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
-
+			prepare: func(a args) {
 				mock.ExpectQuery(
 					`SELECT id, password
 						FROM users
 						WHERE username = \$1`).
-					WithArgs(args.username).
+					WithArgs(a.username).
 					WillReturnError(sql.ErrNoRows)
-
-				fields.db = db
-
-				return err
-			},
-			want: want{
-				userdata: nil,
-				err:      sql.ErrNoRows,
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ff := fields{}
-			require.NoError(t, tt.prepare(tt.args, &ff))
-			repo := NewRepository(ff.db)
+			tt.prepare(tt.args)
+
 			got, err := repo.GetUserByUser(tt.args.username)
-			require.Equal(t, tt.want.err, err)
-			require.Equal(t, tt.want.userdata, got)
+			assert.Equal(t, tt.want.err, err)
+			assert.Equal(t, tt.want.userdata, got)
 		})
 	}
 }
 
 func TestRepository_GetAllUsers(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	repo := NewRepository(db)
+
 	type want struct {
 		userdata []*types.UserDB
 		err      error
 	}
 
-	type fields struct {
-		db *sql.DB
-	}
-
 	tests := []struct {
 		name    string
 		want    want
-		prepare func(*fields) error
+		prepare func()
 	}{
 		{
 			name: "success case",
@@ -130,7 +116,7 @@ func TestRepository_GetAllUsers(t *testing.T) {
 						Password:  "foo",
 					},
 					{
-						ID:        3,
+						ID:        2,
 						Firstname: "test",
 						Lastname:  "test",
 						Username:  "test",
@@ -139,11 +125,10 @@ func TestRepository_GetAllUsers(t *testing.T) {
 				},
 				err: nil,
 			},
-			prepare: func(fields *fields) error {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
+			prepare: func() {
+				rows := sqlmock.NewRows([]string{"id", "firstname", "lastname", "username", "password"}).
+					AddRow(1, "foo", "foo", "foo", "foo").
+					AddRow(2, "test", "test", "test", "test")
 
 				mock.ExpectQuery(
 					`SELECT
@@ -153,15 +138,7 @@ func TestRepository_GetAllUsers(t *testing.T) {
 						username,
 						password
 						FROM users`).
-					WillReturnRows(
-						mock.NewRows(
-							[]string{"id", "firstname", "lastname", "username", "password"}).
-							AddRow(1, "foo", "foo", "foo", "foo").
-							AddRow(3, "test", "test", "test", "test"))
-
-				fields.db = db
-
-				return err
+					WillReturnRows(rows)
 			},
 		},
 		{
@@ -170,12 +147,7 @@ func TestRepository_GetAllUsers(t *testing.T) {
 				userdata: nil,
 				err:      sql.ErrNoRows,
 			},
-			prepare: func(fields *fields) error {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
-
+			prepare: func() {
 				mock.ExpectQuery(
 					`SELECT
 						id,
@@ -185,27 +157,30 @@ func TestRepository_GetAllUsers(t *testing.T) {
 						password
 						FROM users`).
 					WillReturnError(sql.ErrNoRows)
-
-				fields.db = db
-
-				return err
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ff := fields{}
-			require.NoError(t, tt.prepare(&ff))
-			repo := NewRepository(ff.db)
+			tt.prepare()
+
 			got, err := repo.GetAllUsers()
-			require.Equal(t, tt.want.err, err)
-			require.Equal(t, tt.want.userdata, got)
+			assert.Equal(t, tt.want.err, err)
+			assert.Equal(t, tt.want.userdata, got)
 		})
 	}
 }
 
 func TestRepository_GetUserByID(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	repo := NewRepository(db)
+
 	type args struct {
 		id string
 	}
@@ -215,15 +190,11 @@ func TestRepository_GetUserByID(t *testing.T) {
 		err      error
 	}
 
-	type fields struct {
-		db *sql.DB
-	}
-
 	tests := []struct {
 		name    string
 		args    args
 		want    want
-		prepare func(args, *fields) error
+		prepare func(args)
 	}{
 		{
 			name: "success case",
@@ -240,11 +211,9 @@ func TestRepository_GetUserByID(t *testing.T) {
 				},
 				err: nil,
 			},
-			prepare: func(args args, fields *fields) error {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
+			prepare: func(a args) {
+				rows := sqlmock.NewRows([]string{"id", "firstname", "lastname", "username", "password"}).
+					AddRow(1, "foo", "foo", "foo", "foo")
 
 				mock.ExpectQuery(
 					`SELECT id,
@@ -254,31 +223,17 @@ func TestRepository_GetUserByID(t *testing.T) {
 							password
 						FROM users
 						WHERE id = \$1`).
-					WithArgs(args.id).
-					WillReturnRows(
-						mock.NewRows([]string{"id", "firstname", "lastname", "username", "password"}).
-							AddRow(1, "foo", "foo", "foo", "foo"))
-
-				fields.db = db
-
-				return err
+					WithArgs(a.id).
+					WillReturnRows(rows)
 			},
 		},
 		{
 			name: "fail case",
-			args: args{
-				id: "2",
-			},
 			want: want{
 				userdata: nil,
 				err:      sql.ErrNoRows,
 			},
-			prepare: func(args args, fields *fields) error {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
-
+			prepare: func(a args) {
 				mock.ExpectQuery(
 					`SELECT id,
 							    firstname,
@@ -287,29 +242,32 @@ func TestRepository_GetUserByID(t *testing.T) {
 								password
 							FROM users
 							WHERE id = \$1`).
-					WithArgs(args.id).
+					WithArgs(a.id).
 					WillReturnError(sql.ErrNoRows)
-
-				fields.db = db
-
-				return err
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ff := fields{}
-			require.NoError(t, tt.prepare(tt.args, &ff))
-			repo := NewRepository(ff.db)
+			tt.prepare(tt.args)
+
 			got, err := repo.GetUserByID(tt.args.id)
-			require.Equal(t, tt.want.err, err)
-			require.Equal(t, tt.want.userdata, got)
+			assert.Equal(t, tt.want.err, err)
+			assert.Equal(t, tt.want.userdata, got)
 		})
 	}
 }
 
 func TestRepository_CreateUser(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	repo := NewRepository(db)
+
 	type args struct {
 		req types.CreateUserRequest
 	}
@@ -319,15 +277,11 @@ func TestRepository_CreateUser(t *testing.T) {
 		err error
 	}
 
-	type fields struct {
-		db *sql.DB
-	}
-
 	tests := []struct {
 		name    string
 		args    args
 		want    want
-		prepare func(args, *fields) error
+		prepare func(args)
 	}{
 		{
 			name: "success case",
@@ -336,18 +290,16 @@ func TestRepository_CreateUser(t *testing.T) {
 					Firstname: "foo",
 					Lastname:  "foo",
 					Username:  "foo",
-					Password:  "foo",
+					Password:  "$2a$04$JI0ndi7QLiAjIsobT4KThOJjlaLjWTm2kpOw1.hFKmDGY0dmrPu/a",
 				},
 			},
 			want: want{
 				id:  1,
 				err: nil,
 			},
-			prepare: func(args args, fields *fields) error {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
+			prepare: func(a args) {
+				rows := mock.NewRows([]string{"id"}).
+					AddRow(1)
 
 				mock.ExpectQuery(
 					`INSERT INTO users \(firstname, 
@@ -356,79 +308,64 @@ func TestRepository_CreateUser(t *testing.T) {
                     		password\)
 						VALUES \(\$1, \$2, \$3, \$4\)
 						RETURNING id`).
-					WithArgs(args.req.Firstname, args.req.Lastname, args.req.Username, args.req.Password).
-					WillReturnRows(
-						mock.NewRows([]string{"id"}).
-							AddRow(1))
-
-				fields.db = db
-
-				return err
+					WithArgs(a.req.Firstname, a.req.Lastname, a.req.Username, a.req.Password).
+					WillReturnRows(rows)
 			},
 		},
 		{
 			name: "fail case",
-			args: args{
-				req: types.CreateUserRequest{
-					Firstname: "bar",
-					Lastname:  "bar",
-					Username:  "bar",
-					Password:  "bar",
-				},
-			},
 			want: want{
 				id:  0,
 				err: sql.ErrNoRows,
 			},
-			prepare: func(args args, fields *fields) error {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
-
+			prepare: func(a args) {
 				mock.ExpectQuery(
-					`INSERT INTO users \(firstname, lastname, username, password\)
+					`INSERT INTO users \(firstname, 
+                    		lastname, 
+                    		username, 
+                    		password\)
 						VALUES \(\$1, \$2, \$3, \$4\)
 						RETURNING id`).
-					WithArgs(args.req.Firstname, args.req.Lastname, args.req.Username, args.req.Password).
+					WithArgs(a.req.Firstname, a.req.Lastname, a.req.Username, a.req.Password).
 					WillReturnError(sql.ErrNoRows)
-
-				fields.db = db
-
-				return err
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ff := fields{}
-			require.NoError(t, tt.prepare(tt.args, &ff))
-			repo := NewRepository(ff.db)
+			tt.prepare(tt.args)
+
 			got, err := repo.CreateUser(tt.args.req)
-			require.Equal(t, tt.want.err, err)
-			require.Equal(t, tt.want.id, got)
+			assert.Equal(t, tt.want.err, err)
+			assert.Equal(t, tt.want.id, got)
 		})
 	}
 }
 
 func TestRepository_UpdateUser(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	repo := NewRepository(db)
+
 	type args struct {
 		id  string
 		req types.UpdateUserRequest
 	}
+
 	type want struct {
 		err error
-	}
-	type fields struct {
-		db *sql.DB
 	}
 
 	tests := []struct {
 		name    string
 		args    args
 		want    want
-		prepare func(args, *fields) error
+		prepare func(args)
 	}{
 		{
 			"success case",
@@ -444,11 +381,8 @@ func TestRepository_UpdateUser(t *testing.T) {
 			want{
 				err: nil,
 			},
-			func(args args, fields *fields) error {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
+			func(a args) {
+				rows := mock.NewRows([]string{})
 
 				mock.ExpectQuery(
 					`UPDATE users 
@@ -457,27 +391,16 @@ func TestRepository_UpdateUser(t *testing.T) {
 						    username = \$3, 
 						    password = \$4 
 						WHERE id = \$5`).
-					WithArgs(args.req.Firstname, args.req.Lastname, args.req.Username, args.req.Password, args.id).
-					WillReturnRows(
-						mock.NewRows([]string{}))
-
-				fields.db = db
-
-				return err
+					WithArgs(a.req.Firstname, a.req.Lastname, a.req.Username, a.req.Password, a.id).
+					WillReturnRows(rows)
 			},
 		},
 		{
 			name: "fail case",
-			args: args{},
 			want: want{
 				err: sql.ErrNoRows,
 			},
-			prepare: func(args args, fields *fields) error {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
-
+			prepare: func(a args) {
 				mock.ExpectQuery(
 					`UPDATE users
                     	SET firstname = \$1,
@@ -485,43 +408,43 @@ func TestRepository_UpdateUser(t *testing.T) {
 							username = \$3,
 							password = \$4
 						WHERE id = \$5`).
-					WithArgs(args.req.Firstname, args.req.Lastname, args.req.Username, args.req.Password, args.id).
+					WithArgs(a.req.Firstname, a.req.Lastname, a.req.Username, a.req.Password, a.id).
 					WillReturnError(sql.ErrNoRows)
-
-				fields.db = db
-
-				return err
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ff := fields{}
-			require.NoError(t, tt.prepare(tt.args, &ff))
-			repo := NewRepository(ff.db)
-			err := repo.UpdateUser(tt.args.id, tt.args.req)
-			require.Equal(t, tt.want.err, err)
+			tt.prepare(tt.args)
+
+			err = repo.UpdateUser(tt.args.id, tt.args.req)
+			assert.Equal(t, tt.want.err, err)
 		})
 	}
 }
 
 func TestRepository_DeleteUser(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	repo := NewRepository(db)
+
 	type args struct {
 		id string
 	}
 	type want struct {
 		err error
 	}
-	type fields struct {
-		db *sql.DB
-	}
 
 	tests := []struct {
 		name    string
 		args    args
 		want    want
-		prepare func(args, *fields) error
+		prepare func(args)
 	}{
 		{
 			name: "success case",
@@ -531,56 +454,37 @@ func TestRepository_DeleteUser(t *testing.T) {
 			want: want{
 				err: nil,
 			},
-			prepare: func(args args, fields *fields) error {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
+			prepare: func(a args) {
+				rows := mock.NewRows([]string{})
 
 				mock.ExpectQuery(
 					`DELETE FROM users
 						WHERE id = \$1`).
-					WithArgs(args.id).
-					WillReturnRows(
-						mock.NewRows([]string{}))
-
-				fields.db = db
-
-				return err
+					WithArgs(a.id).
+					WillReturnRows(rows)
 			},
 		},
 		{
 			name: "fail case",
-			args: args{},
 			want: want{
 				err: sql.ErrNoRows,
 			},
-			prepare: func(args args, fields *fields) error {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
-
+			prepare: func(a args) {
 				mock.ExpectQuery(
 					`DELETE FROM users
 						WHERE id = \$1`).
-					WithArgs(args.id).
+					WithArgs(a.id).
 					WillReturnError(sql.ErrNoRows)
-
-				fields.db = db
-
-				return err
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ff := fields{}
-			require.NoError(t, tt.prepare(tt.args, &ff))
-			repo := NewRepository(ff.db)
-			err := repo.DeleteUser(tt.args.id)
-			require.Equal(t, tt.want.err, err)
+			tt.prepare(tt.args)
+
+			err = repo.DeleteUser(tt.args.id)
+			assert.Equal(t, tt.want.err, err)
 		})
 	}
 }
