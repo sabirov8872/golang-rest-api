@@ -141,7 +141,6 @@ func TestService_GetAllUsers(t *testing.T) {
 			res, err := serv.GetAllUsers()
 			assert.Equal(t, res, tt.want.userData)
 			assert.Equal(t, err, tt.want.err)
-
 		})
 	}
 }

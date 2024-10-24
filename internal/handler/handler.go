@@ -36,6 +36,8 @@ func NewHandler(service service.IService, secretKey string) *Handler {
 }
 
 func (h *Handler) GetUserByUser(w http.ResponseWriter, r *http.Request) {
+	//test, _ := hashingPassword("test")
+	//fmt.Println(test)
 	var req types.GetUserByUserRequest
 	json.NewDecoder(r.Body).Decode(&req)
 
@@ -65,6 +67,7 @@ func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	res, err := h.service.GetAllUsers()
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: "internal server error"})
+		fmt.Println(err)
 		return
 	}
 
@@ -76,6 +79,7 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 	res, err := h.service.GetUserById(id)
 	if err != nil {
 		w.WriteHeader(http.StatusNoContent)
+		fmt.Println(err)
 		return
 	}
 
