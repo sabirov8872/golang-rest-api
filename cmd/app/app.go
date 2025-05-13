@@ -6,7 +6,7 @@ import (
 	"log"
 
 	_ "github.com/lib/pq"
-	"github.com/sabirov8872/golang-rest-api/internal/config"
+	"github.com/sabirov8872/golang-rest-api/config"
 	"github.com/sabirov8872/golang-rest-api/internal/database"
 	"github.com/sabirov8872/golang-rest-api/internal/handler"
 	"github.com/sabirov8872/golang-rest-api/internal/routes"

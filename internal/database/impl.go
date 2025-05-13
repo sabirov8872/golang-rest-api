@@ -4,7 +4,6 @@ import (
 	"database/sql"
 
 	"github.com/sabirov8872/golang-rest-api/internal/types"
-	"golang.org/x/crypto/bcrypt"
 )
 
 //go:generate mockgen -source=C:/Users/Pro/Desktop/golang-rest-api/internal/database/impl.go -destination=mock/mock.go
@@ -14,7 +13,6 @@ type Repository struct {
 }
 
 type IRepository interface {
-	GetUserByUser(username string) (*types.GetUserByUserDB, error)
 	GetAllUsers() (resp []*types.UserDB, err error)
 	GetUserByID(id string) (*types.UserDB, error)
 	CreateUser(req types.CreateUserRequest) (int64, error)
@@ -26,16 +24,6 @@ func NewRepository(db *sql.DB) *Repository {
 	return &Repository{
 		DB: db,
 	}
-}
-
-func (repo *Repository) GetUserByUser(username string) (*types.GetUserByUserDB, error) {
-	var s types.GetUserByUserDB
-	err := repo.DB.QueryRow(signInQuery, username).Scan(&s.ID, &s.Password)
-	if err != nil {
-		return nil, err
-	}
-
-	return &s, nil
 }
 
 func (repo *Repository) GetAllUsers() (resp []*types.UserDB, err error) {
@@ -86,12 +74,4 @@ func (repo *Repository) UpdateUser(id string, req types.UpdateUserRequest) error
 func (repo *Repository) DeleteUser(id string) error {
 	_, err := repo.DB.Query(deleteUserQuery, id)
 	return err
-}
-
-func HashingPassword(password string) (string, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
-	if err != nil {
-		return "", err
-	}
-	return string(hashedPassword), nil
 }

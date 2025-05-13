@@ -4,14 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
-	"golang.org/x/crypto/bcrypt"
-
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 	"github.com/sabirov8872/golang-rest-api/internal/service"
 	"github.com/sabirov8872/golang-rest-api/internal/types"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Handler struct {
@@ -20,7 +17,6 @@ type Handler struct {
 }
 
 type IHandler interface {
-	GetUserByUser(w http.ResponseWriter, r *http.Request)
 	GetAllUsers(w http.ResponseWriter, r *http.Request)
 	GetUserById(w http.ResponseWriter, r *http.Request)
 	CreateUser(w http.ResponseWriter, r *http.Request)
@@ -33,34 +29,6 @@ func NewHandler(service service.IService, secretKey string) *Handler {
 		service:   service,
 		secretKey: secretKey,
 	}
-}
-
-func (h *Handler) GetUserByUser(w http.ResponseWriter, r *http.Request) {
-	//test, _ := hashingPassword("test")
-	//fmt.Println(test)
-	var req types.GetUserByUserRequest
-	json.NewDecoder(r.Body).Decode(&req)
-
-	s, err := h.service.GetUserByUser(req.Username)
-	if err != nil {
-		writeJSON(w, http.StatusBadRequest, types.ErrorResponse{Message: "invalid username or password"})
-		return
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(s.Password), []byte(req.Password))
-	if err != nil {
-		writeJSON(w, http.StatusBadRequest, types.ErrorResponse{Message: "invalid username or password"})
-		return
-	}
-
-	var token string
-	token, err = createToken(req.Username, s.ID, h.secretKey)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: err.Error()})
-		return
-	}
-
-	writeJSON(w, http.StatusOK, types.GetUserByUserResponse{UserID: s.ID, Token: token})
 }
 
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
@@ -78,8 +46,7 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 	id := getID(r)
 	res, err := h.service.GetUserById(id)
 	if err != nil {
-		w.WriteHeader(http.StatusNoContent)
-		fmt.Println(err)
+		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: "internal server error"})
 		return
 	}
 
@@ -129,7 +96,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := getID(r)
 	err := h.service.DeleteUser(id)
 	if err != nil {
-		w.WriteHeader(http.StatusNoContent)
+		writeJSON(w, http.StatusInternalServerError, types.ErrorResponse{Message: err.Error()})
 		return
 	}
 }
@@ -145,17 +112,6 @@ func writeJSON(w http.ResponseWriter, statusCode int, data any) {
 
 func getID(r *http.Request) string {
 	return mux.Vars(r)["id"]
-}
-
-func createToken(username string, id int64, secretKey string) (string, error) {
-	claims := &jwt.MapClaims{
-		"id":       id,
-		"username": username,
-		"exp":      time.Now().Add(time.Minute * 15).Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(secretKey))
 }
 
 func hashingPassword(password string) (string, error) {

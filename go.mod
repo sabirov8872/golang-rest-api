@@ -1,18 +1,20 @@
 module github.com/sabirov8872/golang-rest-api
 
-go 1.22.6
+go 1.23.0
+
+toolchain go1.23.1
 
 require (
-	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/gorilla/mux v1.8.1
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
-	golang.org/x/crypto v0.28.0
+	golang.org/x/crypto v0.36.0
 )
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/golang/mock v1.6.0
+	github.com/gorilla/handlers v1.5.2
 	github.com/testcontainers/testcontainers-go v0.33.0
 )
 
@@ -59,15 +61,17 @@ require (
 	go.opentelemetry.io/otel v1.31.0 // indirect
 	go.opentelemetry.io/otel/metric v1.31.0 // indirect
 	go.opentelemetry.io/otel/trace v1.31.0 // indirect
-	golang.org/x/net v0.26.0 // indirect
-	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/time v0.8.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240318140521-94a12d6c2237 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241021214115-324edc3d5d38 // indirect
+	google.golang.org/protobuf v1.35.1 // indirect
 )
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
